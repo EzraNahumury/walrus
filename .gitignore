@@ -1,0 +1,24 @@
+# Editor / agent
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Move build artifacts (also excluded by sc_signalvault/.gitignore)
+sc_signalvault/build/
+sc_signalvault/.coverage*
+
+# Frontend (also excluded by frontend/.gitignore)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Sui CLI artifacts that may end up next to the package
+**/Move.lock

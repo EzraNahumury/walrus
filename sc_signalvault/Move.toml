@@ -1,0 +1,15 @@
+[package]
+name = "sc_signalvault"
+edition = "2024"
+version = "0.1.0"
+authors = ["SignalVault"]
+license = "Apache-2.0"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+
+[addresses]
+sc_signalvault = "0x0"
+
+[dev-addresses]
+sc_signalvault = "0x0"

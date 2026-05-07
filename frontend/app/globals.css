@@ -1,0 +1,559 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* SignalVault palette — pure white + cool grays. */
+  --color-bg:        #FFFFFF;
+  --color-bg-soft:   #F7F7F7;
+  --color-bg-2:      #EFEFEF;
+  --color-bg-tint:   #FAFAFA;
+
+  --color-ink-50:  #FFFFFF;
+  --color-ink-100: #F7F7F7;
+  --color-ink-200: #EBEBEB;
+  --color-ink-300: #D6D6D6;
+  --color-ink-400: #A8A8A8;
+  --color-ink-500: #6D6D6D;
+  --color-ink-600: #3F3F3F;
+  --color-ink-700: #262626;
+  --color-ink-800: #161616;
+  --color-ink-900: #0A0A0A;
+  --color-ink-950: #050505;
+
+  --color-accent:      #C84A2C;
+  --color-accent-soft: #B33C20;
+  --color-accent-glow: #E07A5F;
+
+  --color-line:      #E5E5E5;
+  --color-line-soft: #F0F0F0;
+
+  --color-signal-ok:     #2F855A;
+  --color-signal-warn:   #B7791F;
+  --color-signal-danger: #C53030;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Newsreader", "Source Serif Pro", "Georgia", ui-serif, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --tracking-tightish: -0.012em;
+  --tracking-tighter2: -0.028em;
+  --tracking-eyebrow: 0.18em;
+}
+
+:root {
+  color-scheme: light;
+  background: var(--color-bg);
+  color: var(--color-ink-900);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-bg);
+}
+
+::selection {
+  background: rgba(200, 74, 44, 0.18);
+  color: var(--color-ink-900);
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-ink-300);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--color-ink-400); background-clip: padding-box; }
+
+/* Italic serif span — used for *emphasised* words in big headlines */
+.serif-em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.018em;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--color-accent);
+}
+
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-ink-100);
+  border: 1px solid var(--color-ink-200);
+  color: var(--color-ink-700);
+}
+
+.bg-soft {
+  background: var(--color-bg-soft);
+}
+
+.gridlines {
+  background-image:
+    linear-gradient(to right, rgba(10,10,10,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10,10,10,0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+}
+
+.starfield {
+  background-color: #07070A;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.6), transparent 50%),
+    radial-gradient(1.5px 1.5px at 60% 70%, rgba(255,255,255,0.5), transparent 50%),
+    radial-gradient(1px 1px at 35% 80%, rgba(255,255,255,0.45), transparent 50%),
+    radial-gradient(1.5px 1.5px at 80% 20%, rgba(255,255,255,0.55), transparent 50%),
+    radial-gradient(1px 1px at 45% 50%, rgba(255,255,255,0.4), transparent 50%),
+    radial-gradient(1px 1px at 75% 55%, rgba(255,255,255,0.5), transparent 50%),
+    radial-gradient(1px 1px at 15% 65%, rgba(255,255,255,0.45), transparent 50%);
+  background-size: 720px 480px, 540px 360px, 600px 400px, 660px 440px, 480px 320px, 720px 480px, 540px 360px;
+}
+
+/* Animated halo around aktive elements (welcome page icon) */
+.ring-dot {
+  position: relative;
+}
+.ring-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  opacity: 0.35;
+  animation: ring-pulse 3s ease-out infinite;
+}
+@keyframes ring-pulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Reveal-on-scroll baseline */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float-slow { animation: float-slow 6s ease-in-out infinite; }
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 28s linear infinite; }
+
+/* Walrus mascot — bobbing float + tiny wobble + glow pulse */
+@keyframes walrus-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-14px) rotate(2deg); }
+}
+.walrus-bob { animation: walrus-bob 5.4s ease-in-out infinite; }
+
+@keyframes halo-pulse {
+  0%, 100% { transform: scale(1);   opacity: 0.55; }
+  50%      { transform: scale(1.08); opacity: 0.85; }
+}
+.halo-pulse { animation: halo-pulse 4.2s ease-in-out infinite; }
+
+@keyframes shadow-drift {
+  0%, 100% { transform: translateX(-50%) scale(1);   opacity: 0.55; }
+  50%      { transform: translateX(-50%) scale(0.84); opacity: 0.35; }
+}
+.shadow-drift { animation: shadow-drift 5.4s ease-in-out infinite; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.blink { animation: blink 1.6s ease-in-out infinite; }
+
+.shadow-card {
+  box-shadow:
+    0 1px 0 rgba(10, 10, 10, 0.04),
+    0 1px 2px rgba(10, 10, 10, 0.04);
+}
+
+/* Toast enter / leave / progress */
+@keyframes toast-enter-anim {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+@keyframes toast-leave-anim {
+  from { opacity: 1; transform: translateY(0)     scale(1); }
+  to   { opacity: 0; transform: translateY(-8px)  scale(0.97); }
+}
+.toast-enter { animation: toast-enter-anim 220ms cubic-bezier(0.22, 1, 0.36, 1); }
+.toast-leave { animation: toast-leave-anim 200ms ease-in forwards; }
+@keyframes toast-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.shadow-card-hover {
+  box-shadow:
+    0 1px 0 rgba(10, 10, 10, 0.04),
+    0 8px 24px -12px rgba(10, 10, 10, 0.18);
+}
+
+/* === Network graph animations ============================================ */
+
+/* Nodes: gentle pulse + glow.
+   Apply .net-node-N (1..6) to vary phase, so nodes don't pulse in unison. */
+@keyframes net-node-pulse {
+  0%, 100% { r: var(--r, 1.5); opacity: 0.55; filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  50%      { r: calc(var(--r, 1.5) * 1.6); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
+}
+.net-node {
+  animation: net-node-pulse 3.6s ease-in-out infinite;
+  transform-box: fill-box;
+}
+.net-node-1 { animation-delay: 0s; }
+.net-node-2 { animation-delay: -0.5s; }
+.net-node-3 { animation-delay: -1.0s; }
+.net-node-4 { animation-delay: -1.5s; }
+.net-node-5 { animation-delay: -2.0s; }
+.net-node-6 { animation-delay: -2.6s; }
+
+/* Edges: shimmering stroke-dashoffset traveling along the line. */
+@keyframes net-edge-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -36; }
+}
+.net-edge {
+  stroke-dasharray: 4 14;
+  stroke-linecap: round;
+  animation: net-edge-flow 4s linear infinite;
+  opacity: 0.55;
+}
+.net-edge-static {
+  stroke-dasharray: none;
+  opacity: 0.18;
+}
+
+/* Slow drift on the whole graph for parallax life */
+@keyframes net-drift {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(6px, -4px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+.net-drift {
+  animation: net-drift 14s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* A bright traveling pulse riding edges (small dot moving along path). */
+@keyframes net-pulse-travel {
+  from { offset-distance: 0%;   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  to   { offset-distance: 100%; opacity: 0; }
+}
+.net-pulse {
+  fill: #FFFFFF;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
+  animation: net-pulse-travel 5s linear infinite;
+  offset-rotate: 0deg;
+}
+
+/* Sealed blob hero card "scan line" */
+@keyframes scan-line {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  20%  { opacity: 0.6; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(120%); opacity: 0; }
+}
+.scan-line {
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: scan-line 4s linear infinite;
+}
+
+/* Small twinkling stars on dark cards. Apply to a generic span. */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+.twinkle { animation: twinkle 2.4s ease-in-out infinite; }
+
+/* === Touchpoint card animations =========================================== */
+
+/* Schema blob — JSON lines typing in with stagger */
+.schema-line {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 0px solid transparent;
+  animation: schema-type 7s steps(40, end) infinite;
+  width: 0;
+}
+.schema-line-1 { animation-delay: 0s; }
+.schema-line-2 { animation-delay: 0.6s; }
+.schema-line-3 { animation-delay: 1.2s; }
+.schema-line-4 { animation-delay: 1.8s; }
+.schema-line-5 { animation-delay: 2.4s; }
+.schema-line-6 { animation-delay: 3.0s; }
+@keyframes schema-type {
+  0%   { width: 0; opacity: 0.5; }
+  10%  { width: 100%; opacity: 1; }
+  85%  { width: 100%; opacity: 1; }
+  92%  { opacity: 0.4; }
+  100% { width: 0; opacity: 0; }
+}
+
+/* Encrypted envelope — pulsing rings + cycling hex pairs */
+.enc-ring-1 {
+  animation: enc-ring 2.6s ease-out infinite;
+}
+.enc-ring-2 {
+  animation: enc-ring 2.6s ease-out infinite 0.6s;
+}
+@keyframes enc-ring {
+  0%   { transform: scale(0.85); opacity: 0; }
+  20%  { opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.enc-cell {
+  display: inline-block;
+  animation: enc-flip 1.6s steps(1) infinite;
+}
+@keyframes enc-flip {
+  0%, 100% { color: rgba(255,255,255,0.55); transform: translateY(0); }
+  25%      { color: rgba(224,122,95,0.9); transform: translateY(-1px); }
+  50%      { color: rgba(255,255,255,0.4); }
+  75%      { color: rgba(224,122,95,0.6); }
+}
+
+/* Media blob — progress bar + scan line + percent counter */
+.media-bar {
+  width: 0%;
+  animation: media-fill 4s ease-in-out infinite;
+}
+@keyframes media-fill {
+  0%   { width: 0%; }
+  60%  { width: 100%; }
+  80%  { width: 100%; opacity: 1; }
+  85%  { opacity: 0.4; }
+  90%  { width: 0%; opacity: 0; }
+  100% { width: 0%; opacity: 0; }
+}
+.media-pct::after {
+  content: "100%";
+  animation: media-pct 4s ease-in-out infinite;
+}
+@keyframes media-pct {
+  0%   { content: "0%"; }
+  10%  { content: "12%"; }
+  20%  { content: "24%"; }
+  30%  { content: "39%"; }
+  40%  { content: "55%"; }
+  50%  { content: "71%"; }
+  60%  { content: "100%"; }
+  100% { content: "100%"; }
+}
+.media-pct {
+  display: inline-block;
+}
+.media-pct {
+  /* Hide the JS text node; only the ::after counter shows. */
+  font-size: 0;
+}
+.media-pct::after { font-size: 9px; letter-spacing: 0.16em; }
+
+.media-scan {
+  top: 0;
+  animation: media-scan 2.2s linear infinite;
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
+@keyframes media-scan {
+  0%   { top: 0; opacity: 0.2; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.media-thumb {
+  animation: media-thumb-glow 4s ease-in-out infinite;
+}
+@keyframes media-thumb-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50%      { box-shadow: 0 0 24px -6px rgba(122,167,255,0.4); }
+}
+
+/* Index — fan-out edges drawing in, leaves popping, ledger streaming */
+.idx-edge {
+  stroke-dashoffset: 30;
+  animation: idx-edge-draw 6s ease-out infinite;
+}
+@keyframes idx-edge-draw {
+  0%, 5%   { stroke-dashoffset: 30; opacity: 0; }
+  20%      { stroke-dashoffset: 0;  opacity: 0.7; }
+  85%      { opacity: 0.45; }
+  100%     { stroke-dashoffset: 0;  opacity: 0.45; }
+}
+.idx-leaf {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: idx-leaf-pop 6s ease-in-out infinite;
+}
+.idx-leaf-glow {
+  animation: idx-leaf-glow 6s ease-in-out infinite;
+}
+@keyframes idx-leaf-pop {
+  0%, 10%  { transform: scale(0); opacity: 0; }
+  25%      { transform: scale(1.4); opacity: 1; }
+  35%      { transform: scale(1); opacity: 1; }
+  100%     { transform: scale(1); opacity: 1; }
+}
+@keyframes idx-leaf-glow {
+  0%, 10%  { opacity: 0; }
+  30%      { opacity: 1; }
+  60%      { opacity: 0.5; }
+  100%     { opacity: 0.6; }
+}
+.idx-root {
+  animation: idx-root-pulse 2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes idx-root-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.3); }
+}
+.idx-stream {
+  animation: idx-stream 10s linear infinite;
+}
+@keyframes idx-stream {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.idx-counter::after {
+  content: "247 entries";
+  animation: idx-count 6s steps(8) infinite;
+}
+@keyframes idx-count {
+  0%   { content: "0 entries"; }
+  12%  { content: "31 entries"; }
+  25%  { content: "84 entries"; }
+  40%  { content: "139 entries"; }
+  55%  { content: "186 entries"; }
+  70%  { content: "224 entries"; }
+  85%  { content: "247 entries"; }
+  100% { content: "247 entries"; }
+}
+
+/* Receipt — printer scroll + hash flicker */
+.receipt-stream {
+  animation: receipt-scroll 12s linear infinite;
+}
+@keyframes receipt-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.receipt-hash {
+  animation: receipt-hash 1.6s steps(8) infinite;
+}
+@keyframes receipt-hash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* === Guarantee card animations =========================================== */
+
+/* Histogram bars: each bar grows to its --target, then breathes subtly. */
+@keyframes histo-rise {
+  0%   { height: 0%; opacity: 0.4; }
+  60%  { height: var(--target); opacity: 1; }
+  100% { height: var(--target); opacity: 1; }
+}
+@keyframes histo-breathe {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.08); }
+}
+.histo-bar {
+  height: 0%;
+  transform-origin: bottom;
+  animation:
+    histo-rise 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    histo-breathe 2.8s ease-in-out infinite 1.6s;
+  background: linear-gradient(180deg, var(--color-ink-300), var(--color-ink-400));
+}
+
+/* Aggregate dots: highlight cycles left → right. */
+.agg-dot {
+  display: block;
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: var(--color-ink-300);
+  transition: background-color 200ms ease;
+  animation: agg-cycle 3.2s ease-in-out infinite;
+}
+@keyframes agg-cycle {
+  0%, 100% { background: var(--color-ink-300); transform: scale(1); }
+  20%      { background: var(--color-ink-900); transform: scale(1.15); }
+  40%      { background: var(--color-ink-300); transform: scale(1); }
+}
+.agg-dot-1 { animation-delay: 0s; }
+.agg-dot-2 { animation-delay: 0.4s; }
+.agg-dot-3 { animation-delay: 0.8s; }
+.agg-dot-4 { animation-delay: 1.2s; }
+
+/* Wallet flow: dot travels left ↔ right along the connector. */
+@keyframes travel {
+  0%   { left: 0%;     opacity: 0; transform: scale(0.8); }
+  10%  { opacity: 1; transform: scale(1); }
+  50%  { left: calc(100% - 8px); opacity: 1; transform: scale(1); }
+  60%  { opacity: 0; }
+  61%  { left: 0%; opacity: 0; }
+  70%  { opacity: 1; transform: scale(1); }
+  100% { left: calc(100% - 8px); opacity: 0; transform: scale(0.8); }
+}
+.travel-dot {
+  left: 0%;
+  animation: travel 2.8s cubic-bezier(0.6, 0.0, 0.4, 1) infinite;
+}
+.wallet-pulse {
+  animation: wallet-pulse 3.2s ease-in-out infinite;
+}
+@keyframes wallet-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(10, 10, 10, 0.06); }
+  50%      { box-shadow: 0 0 0 6px rgba(10, 10, 10, 0); }
+}
+.submit-bounce {
+  animation: submit-bounce 2.8s ease-in-out infinite;
+}
+@keyframes submit-bounce {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(2px); }
+}
+.submit-arrow {
+  animation: submit-arrow 2.8s ease-in-out infinite;
+}
+@keyframes submit-arrow {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(1px, -1px); }
+}
