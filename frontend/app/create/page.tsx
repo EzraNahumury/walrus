@@ -5,12 +5,13 @@ import {
   useSignAndExecuteTransaction,
   useSuiClient,
 } from "@mysten/dapp-kit";
-import { CheckCircle2, Plus, Share2 } from "lucide-react";
+import { CheckCircle2, Plus, Share2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Container } from "@/components/layout/Container";
+import { AIDraftDialog } from "@/components/forms/AIDraftDialog";
 import { FieldEditor } from "@/components/forms/FieldEditor";
 import { FieldRenderer } from "@/components/forms/FieldRenderer";
 import { FieldTypePicker } from "@/components/forms/FieldTypePicker";
@@ -21,9 +22,11 @@ import { PillButton } from "@/components/ui/PillButton";
 import { Reveal } from "@/components/ui/Reveal";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import type { AIFormDraft } from "@/lib/chaingpt";
 import { saveForm } from "@/lib/demo-store";
 import { CATEGORY_LABEL, newField, newSchema } from "@/lib/forms";
 import { toast } from "@/lib/toast";
+import { nanoid } from "nanoid";
 import { buildCreateFormTx, findFormPolicyId } from "@/lib/ptb";
 import {
   shortAddr,
@@ -45,6 +48,7 @@ export default function CreateFormPage() {
 
   const [schema, setSchema] = useState<FormSchema>(() => newSchema(wallet));
   const [showAddPanel, setShowAddPanel] = useState(true);
+  const [aiOpen, setAiOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishStep, setPublishStep] = useState<string>("");
   const [published, setPublished] = useState<{
@@ -53,6 +57,28 @@ export default function CreateFormPage() {
     policyObjectId?: string;
     txDigest?: string;
   } | null>(null);
+
+  const applyAIDraft = (draft: AIFormDraft) => {
+    setSchema((s) => ({
+      ...s,
+      name: draft.name,
+      description: draft.description,
+      category: draft.category,
+      fields: draft.fields.map((f) => ({
+        id: nanoid(8),
+        type: f.type,
+        label: f.label,
+        description: f.description,
+        required: f.required,
+        sensitive: f.sensitive,
+        publicOnReceipt: f.publicOnReceipt,
+        options: f.options,
+        maxRating: f.maxRating,
+      })),
+      updatedAt: Date.now(),
+    }));
+    setShowAddPanel(false);
+  };
 
   useEffect(() => {
     setSchema((s) => ({ ...s, creatorWallet: wallet }));
@@ -176,7 +202,11 @@ export default function CreateFormPage() {
               Authoring as <span className="font-mono">{shortAddr(wallet)}</span> · Storage:&nbsp;Walrus {walrusMode}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" onClick={() => setAiOpen(true)}>
+              <Sparkles className="h-3.5 w-3.5 text-[color:var(--color-accent)]" />
+              Draft with AI
+            </Button>
             <Button variant="outline" onClick={() => setSchema(newSchema(wallet))}>
               Reset
             </Button>
@@ -390,6 +420,12 @@ export default function CreateFormPage() {
           ) : null}
         </div>
       </div>
+
+      <AIDraftDialog
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onApply={applyAIDraft}
+      />
     </Container>
   );
 }
