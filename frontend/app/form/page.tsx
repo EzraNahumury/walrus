@@ -201,7 +201,7 @@ function FormPageInner() {
           responseBlobId: upload.blobId,
           responseHashHex: response.responseHash ?? "",
         });
-        const exec = await signAndExecute({ transaction: tx });
+        const exec = await signAndExecute({ transaction: tx as never });
         const final = await suiClient.waitForTransaction({
           digest: exec.digest,
           options: { showEffects: true },

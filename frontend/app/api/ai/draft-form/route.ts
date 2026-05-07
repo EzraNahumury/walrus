@@ -126,82 +126,37 @@ export async function POST(req: Request) {
 /* -------------------------------------------------------------------------- */
 
 function buildPrompt(brief: string): string {
-  // Strong directive prompt with a few-shot example. ChainGPT's general
-  // assistant is conversational by default, so we reinforce JSON-only
-  // multiple times and show the exact target shape as an example.
+  // Tight prompt. NO JSON-Schema talk. Show the exact target shape inline.
+  // Model is the conversational `general_assistant`, so we keep it short and
+  // hammer JSON-only twice. Avoid the word "schema" so it does not return
+  // JSON Schema syntax.
   return [
-    "You are a JSON form generator. Output a single JSON object and nothing else.",
-    "No prose. No markdown. No code fences. Start the response with { and end with }.",
+    "Return one JSON object. No prose. No markdown. No code fences.",
+    "Begin with { and end with }.",
     "",
-    "Allowed values:",
-    `category: ${JSON.stringify(CATEGORIES)}`,
-    `field.type: ${JSON.stringify(FIELD_TYPES)}`,
+    "Required shape:",
+    '{ "name": "...", "description": "...", "category": "...", "fields": [ ... ] }',
     "",
-    "Field rules:",
-    "- 3 to 7 fields total.",
-    "- The last field must be type \"confirmation\" with required: true.",
-    "- Mark long text, descriptions, contact info, severity narratives as sensitive: true.",
-    "- Mark short titles or category dropdowns as sensitive: false.",
-    "- publicOnReceipt: true only for short, non-sensitive labels safe to show on a public proof page.",
-    "- For dropdown/checkbox include 2–4 \"options\" with value+label.",
-    "- For star_rating set maxRating: 5.",
+    `category must be one of: ${CATEGORIES.join(", ")}.`,
+    "",
+    "Each item in fields must look like:",
+    '{ "type": "...", "label": "...", "required": true|false, "sensitive": true|false, "publicOnReceipt": true|false }',
+    "",
+    `type must be one of: ${FIELD_TYPES.join(", ")}.`,
+    "",
+    "Rules:",
+    "- 3 to 7 fields.",
+    "- Last field: type=confirmation, required=true.",
+    "- Long answers (descriptions, narratives, contact info) → sensitive=true.",
+    "- Short labels or dropdowns → sensitive=false.",
+    "- publicOnReceipt=true only for short non-sensitive labels (titles, severity tier).",
+    "- For dropdown or checkbox add options array with at least 2 items: each item is { \"value\": \"...\", \"label\": \"...\" }.",
+    "- For star_rating add maxRating: 5.",
     "- Do not use screenshot or video unless the brief explicitly mentions images or videos.",
-    "",
-    "Example output for the brief \"Bug intake for v2 trading client\":",
-    JSON.stringify({
-      name: "Mainnet bug intake",
-      description:
-        "Confidential bug reports for the v2 trading client. Sensitive details encrypted; only core engineers can decrypt.",
-      category: "bug",
-      fields: [
-        {
-          type: "short_text",
-          label: "Short title",
-          required: true,
-          sensitive: false,
-          publicOnReceipt: true,
-        },
-        {
-          type: "dropdown",
-          label: "Severity",
-          required: true,
-          sensitive: false,
-          publicOnReceipt: false,
-          options: [
-            { value: "low", label: "Low" },
-            { value: "medium", label: "Medium" },
-            { value: "high", label: "High" },
-            { value: "critical", label: "Critical" },
-          ],
-        },
-        {
-          type: "rich_text",
-          label: "Steps to reproduce + impact",
-          required: true,
-          sensitive: true,
-          publicOnReceipt: false,
-        },
-        {
-          type: "star_rating",
-          label: "Severity confidence",
-          required: false,
-          sensitive: false,
-          publicOnReceipt: false,
-          maxRating: 5,
-        },
-        {
-          type: "confirmation",
-          label: "I confirm this report is accurate to the best of my knowledge",
-          required: true,
-          sensitive: false,
-          publicOnReceipt: false,
-        },
-      ],
-    }),
     "",
     `Brief: ${brief}`,
     "",
-    "Output JSON now. No commentary.",
+    "Output JSON object now.",
   ].join("\n");
 }
 
@@ -268,7 +223,40 @@ interface SanitizedDraft {
 }
 
 function sanitizeDraft(d: RawDraft): SanitizedDraft {
-  const dd = d as Record<string, unknown>;
+  let dd = d as Record<string, unknown>;
+
+  // ChainGPT sometimes returns a JSON-Schema (`{ type: "object",
+  // properties: {...} }`). Convert to our { fields: [...] } shape.
+  if (
+    !Array.isArray(dd.fields) &&
+    dd.type === "object" &&
+    dd.properties &&
+    typeof dd.properties === "object"
+  ) {
+    const props = dd.properties as Record<string, Record<string, unknown>>;
+    const required = Array.isArray(dd.required) ? (dd.required as string[]) : [];
+    const fields = Object.entries(props).map(([key, val]) => ({
+      type: val.type ?? "short_text",
+      label: typeof val.title === "string" ? val.title : prettyKey(key),
+      description: typeof val.description === "string" ? val.description : undefined,
+      required: required.includes(key) || val.required === true,
+      sensitive:
+        val.sensitive === true || /sensitive|private|secret/i.test(key),
+      publicOnReceipt: false,
+      options: Array.isArray(val.enum)
+        ? (val.enum as unknown[])
+            .filter((x): x is string => typeof x === "string")
+            .map((s) => ({ value: s, label: s }))
+        : undefined,
+    }));
+    dd = {
+      name: dd.name ?? dd.title ?? "Untitled form",
+      description: dd.description ?? "",
+      category: dd.category,
+      fields,
+    };
+  }
+
   // ChainGPT often uses `formTitle`, `title`, `formName`, etc.
   const nameRaw = pickString(dd.name, dd.formTitle, dd.formName, dd.title);
   const name = nameRaw && nameRaw.length > 0 ? nameRaw.slice(0, 80) : "Untitled form";
@@ -332,6 +320,15 @@ function pickString(...values: unknown[]): string | null {
     if (typeof v === "string" && v.trim().length > 0) return v.trim();
   }
   return null;
+}
+
+function prettyKey(key: string): string {
+  return key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\w/, (c) => c.toUpperCase());
 }
 
 function guessCategory(text: string): (typeof CATEGORIES)[number] {

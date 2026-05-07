@@ -46,7 +46,7 @@ import {
   useOnChainForms,
   useOnChainResponses,
 } from "@/lib/hooks/useOnChainForms";
-import { buildCsv, downloadCsv } from "@/lib/export";
+import { buildCsv, downloadCsv, downloadXlsx } from "@/lib/export";
 import { CATEGORY_LABEL, fieldLabelFor } from "@/lib/forms";
 import { generateInsight } from "@/lib/insights";
 import { decryptSensitive } from "@/lib/seal";
@@ -200,16 +200,35 @@ function FormDashboardInner() {
     }
   };
 
-  const onExport = () => {
-    const enriched = filtered.map((r) => {
+  const enrichedRows = () =>
+    filtered.map((r) => {
       if (!r.sensitive) return r;
       const plain = decrypted[r.responseId];
       if (!plain) return r;
       return { ...r, publicFields: { ...r.publicFields, ...plain } };
     });
-    const csv = buildCsv(schema, enriched, triages);
-    const safe = schema.name.replace(/[^a-z0-9]+/gi, "_").toLowerCase();
-    downloadCsv(`${safe}_${Date.now()}.csv`, csv);
+
+  const safeName = () => schema.name.replace(/[^a-z0-9]+/gi, "_").toLowerCase();
+
+  const onExportCsv = () => {
+    const csv = buildCsv(schema, enrichedRows(), triages);
+    downloadCsv(`${safeName()}_${Date.now()}.csv`, csv);
+  };
+
+  const onExportXlsx = async () => {
+    try {
+      await downloadXlsx(
+        `${safeName()}_${Date.now()}.xlsx`,
+        schema,
+        enrichedRows(),
+        triages,
+      );
+    } catch (e) {
+      toast.error(
+        "Excel export failed",
+        e instanceof Error ? e.message : "Unknown error",
+      );
+    }
   };
 
   return (
@@ -236,9 +255,13 @@ function FormDashboardInner() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onExport}>
+            <Button variant="outline" size="sm" onClick={onExportCsv}>
               <Download className="h-3.5 w-3.5" />
-              Export CSV
+              CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={onExportXlsx}>
+              <Download className="h-3.5 w-3.5" />
+              Excel
             </Button>
             <PillButton href={`/form?id=${schema.formId}`} size="sm">
               Open public form

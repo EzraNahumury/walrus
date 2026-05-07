@@ -141,7 +141,9 @@ export default function CreateFormPage() {
           formUid: schema.formId,
           schemaBlobId: uploadResult.blobId,
         });
-        const exec = await signAndExecute({ transaction: tx });
+        // dapp-kit ships its own copy of @mysten/sui — Transaction from the
+        // top-level dep is structurally identical but a different class.
+        const exec = await signAndExecute({ transaction: tx as never });
         txDigest = exec.digest;
         // Wait for finality with objectChanges so we can grab the new policy id.
         const final = await suiClient.waitForTransaction({
