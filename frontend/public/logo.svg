@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="SignalVault">
+  <title>SignalVault</title>
+  <defs>
+    <linearGradient id="drop-fill" x1="256" y1="48" x2="256" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8917A"/>
+      <stop offset="0.45" stop-color="#C84A2C"/>
+      <stop offset="1" stop-color="#7E1F0E"/>
+    </linearGradient>
+    <radialGradient id="drop-hl" cx="36%" cy="32%" r="50%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="drop-shadow" cx="50%" cy="60%" r="55%">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.30"/>
+    </radialGradient>
+    <linearGradient id="seal-stroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Drop body -->
+  <path
+    d="M256 48
+       C 256 48, 408 184, 408 296
+       a 152 152 0 1 1 -304 0
+       C 104 184, 256 48, 256 48 Z"
+    fill="url(#drop-fill)"
+  />
+
+  <!-- Inner shadow + curvature -->
+  <path
+    d="M256 48
+       C 256 48, 408 184, 408 296
+       a 152 152 0 1 1 -304 0
+       C 104 184, 256 48, 256 48 Z"
+    fill="url(#drop-shadow)"
+  />
+
+  <!-- Glossy highlight (front-left) -->
+  <path
+    d="M170 130
+       C 200 100, 232 84, 256 76
+       C 232 110, 210 152, 200 200
+       C 192 236, 192 260, 192 268
+       C 170 250, 158 224, 158 196
+       C 158 174, 162 152, 170 130 Z"
+    fill="url(#drop-hl)"
+  />
+
+  <!-- Eyes (subtle, mascot vibe) -->
+  <circle cx="216" cy="306" r="12" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="296" cy="306" r="12" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="218" cy="308" r="5" fill="#3A0E04"/>
+  <circle cx="298" cy="308" r="5" fill="#3A0E04"/>
+
+  <!-- Smile -->
+  <path
+    d="M212 348 C 232 366, 280 366, 300 348"
+    stroke="#FFFFFF"
+    stroke-opacity="0.85"
+    stroke-width="6"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Tiny seal (lock) tag at bottom — privacy hint -->
+  <g transform="translate(232 392)">
+    <rect x="0" y="14" width="48" height="36" rx="6" fill="#FFFFFF" opacity="0.85"/>
+    <path d="M10 14 v -6 a 14 14 0 0 1 28 0 v 6"
+          stroke="url(#seal-stroke)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="24" cy="32" r="3.5" fill="#7E1F0E"/>
+    <rect x="22.4" y="32" width="3.2" height="9" rx="1" fill="#7E1F0E"/>
+  </g>
+</svg>

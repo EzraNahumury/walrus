@@ -1,668 +1,663 @@
-# SignalVault — Encrypted Feedback OS on Walrus
+<div align="center">
 
-> A Walrus-native feedback and form operating system for Web3 teams. Build forms in minutes, collect community feedback, encrypt private responses with Seal, and turn raw signal into shipped product decisions — all stored on decentralized Walrus blobs that teams actually own.
+<img src="frontend/public/logo.png" alt="SignalVault" width="120" />
+
+# SignalVault
+
+**Encrypted feedback OS on Walrus**
+*Private feedback. Public proof.*
+
+[![Live Demo](https://img.shields.io/badge/demo-ezidentity.wal.app-1f6feb?style=for-the-badge)](https://ezidentity.wal.app)
+[![Walrus Mainnet](https://img.shields.io/badge/Walrus-mainnet-2F855A?style=for-the-badge)](https://docs.wal.app)
+[![Sui](https://img.shields.io/badge/Sui-testnet%20%2B%20mainnet-3B6BD3?style=for-the-badge)](https://sui.io)
+[![License](https://img.shields.io/badge/License-Apache_2.0-0A0A0A?style=for-the-badge)](#license)
+
+A Walrus-native feedback and form platform.<br/>
+Build forms, collect Seal-encrypted responses, and give every contributor a content-addressed Proof-of-Feedback receipt — all without a centralized backend.
+
+</div>
 
 ---
 
-## 1. One-Line Pitch
+## Table of contents
 
-**SignalVault is the encrypted, content-addressed feedback OS that lets Web3 teams collect, verify, and act on community signal — with cryptographic Proof-of-Feedback receipts and Seal-gated private responses, all natively stored on Walrus.**
+1. [Live submission links](#live-submission-links)
+2. [What it is](#what-it-is)
+3. [The problem](#the-problem)
+4. [The solution](#the-solution)
+5. [Why Walrus](#why-walrus)
+6. [Core features](#core-features)
+7. [Differentiator — Proof-of-Feedback](#differentiator--proof-of-feedback)
+8. [Architecture](#architecture)
+9. [Tech stack](#tech-stack)
+10. [Repository layout](#repository-layout)
+11. [On-chain addresses](#on-chain-addresses)
+12. [Data model](#data-model)
+13. [Routes](#routes)
+14. [AI form generator (ChainGPT)](#ai-form-generator-chaingpt)
+15. [Local development](#local-development)
+16. [Production deployment](#production-deployment)
+17. [Environment variables](#environment-variables)
+18. [Demo script (3 min)](#demo-script-3-min)
+19. [One-pager pitch](#one-pager-pitch)
+20. [Hackathon submission checklist](#hackathon-submission-checklist)
+21. [Risks & mitigations](#risks--mitigations)
+22. [Roadmap](#roadmap)
+23. [License](#license)
 
 ---
 
-## 2. The Problem
+## Live submission links
 
-Web3 teams today collect community feedback across a fragmented stack:
+| Item | Link |
+|---|---|
+| **Live demo** | https://ezidentity.wal.app |
+| **GitHub** | https://github.com/EzraNahumury/walrus |
+| **Walrus Site object** | [`0x096b2385…344e`](https://suiscan.xyz/mainnet/object/0x096b2385c1bbc45fc300742f5942948f53297db3f3863852d94e9d663e28344e) |
+| **SignalVault Move package (testnet)** | [`0x3723d96b…4c50`](https://suiscan.xyz/testnet/object/0x3723d96b66a75a5229db751bd712f5253a9960738931bbcef2b7217014864c50) |
+| **SignalVault Move package (mainnet)** | [`0x59fc6603…9d50`](https://suiscan.xyz/mainnet/object/0x59fc66036b7148c57cee70920faeb66353891ea15d66abe34f72469a69b89d50) |
+| **Dedicated Walrus Sessions wallet** | `0xe7d9532d086478c1e1cc6914e74929814118e4de35ffd8b9a326a0bd8ef91d11` |
+| **Demo video** | _3-min screencast — see [`/docs/video/`](#demo-script-3-min)_ |
+| **One-pager** | [§19 below](#one-pager-pitch) |
 
-- Bug reports live in **Discord threads** that scroll into oblivion.
-- Feature requests are buried in **Notion docs** nobody opens.
-- Surveys go through **Google Forms / Typeform** — centralized, opaque, and owned by the vendor.
-- Grant applications get emailed, DM'd, or pasted into **Telegram**.
-- Sentiment lives in **X replies** with zero structure.
-- Sensitive feedback (security disclosures, candid reviews, applications) is leaked through plaintext channels with no access control.
+---
 
-This creates four hard failures:
+## What it is
 
-1. **Fragmentation.** Teams cannot see all feedback in one place.
+SignalVault is a feedback platform with two simple promises:
+
+1. **Sensitive answers stay private** — every field marked sensitive is encrypted in the contributor's browser before it touches Walrus.
+2. **Every submission is provable** — each response becomes a content-addressed Walrus blob and emits a tamper-evident `ResponseRecorded` event on Sui. Contributors get a public Proof-of-Feedback receipt without leaking the body.
+
+It is *not* a Typeform clone with a blockchain sticker. It is feedback **infrastructure** rebuilt around content-addressed storage, on-chain access control, and portable team-owned archives.
+
+---
+
+## The problem
+
+Web3 teams currently collect community feedback through a fragmented stack:
+
+- Bug reports vanish in **Discord** scrollback
+- Feature requests rot in **Notion** docs
+- Surveys live in **Google Forms / Typeform** — centralized, opaque, vendor-owned
+- Grant applications get DM'd
+- Sensitive disclosures sit plaintext in inboxes
+
+Four hard failures result:
+
+1. **Fragmentation.** Teams can't see all feedback in one place.
 2. **No ownership.** When a vendor goes down, raises prices, or changes ToS, your community signal evaporates.
 3. **No privacy guarantees.** Sensitive submissions sit in plaintext on someone else's servers.
-4. **No verifiability.** Contributors cannot prove they submitted feedback. Teams cannot prove the dataset is untampered.
+4. **No verifiability.** Contributors can't prove they submitted. Teams can't prove the dataset is untampered.
 
-In short: **Web2 form tools were never designed for sovereign, verifiable, encrypted community feedback.**
+Web2 form tools were never designed for sovereign, verifiable, encrypted community feedback.
 
 ---
 
-## 3. The Solution
+## The solution
 
-**SignalVault** is a feedback platform built natively on Walrus, designed from day one around content-addressed storage, encrypted access control, and portable team-owned archives.
+A platform built natively on Walrus, designed from day one around content-addressed storage, encrypted access control, and portable team-owned archives.
 
 - Anyone can spin up a custom form (bug report, feature request, survey, grant application, retro, NPS) in under 90 seconds.
-- Every form schema is published as a **public Walrus blob** with a verifiable blob ID.
-- Every response is stored on Walrus, organized by form.
-- Sensitive fields are **encrypted client-side using Seal** before upload — only the form creator and approved admins can decrypt.
-- Public, non-sensitive metadata (form ID, response blob ID, timestamp) generates a **Feedback Receipt** the contributor can show off, link to, or use as Proof-of-Feedback.
+- Form schemas are **public Walrus blobs** with verifiable blob IDs.
+- Responses are stored on Walrus, organized by form.
+- Sensitive fields are **encrypted client-side using Seal-style envelopes** before upload — only the form creator and approved admins can decrypt.
+- Every submission produces a public, content-addressed **Feedback Receipt** the contributor can show off, link to, or use as proof.
 - A polished **admin dashboard** lets teams triage, filter, annotate, prioritize, export, and convert raw responses into actionable insights.
 
-The full archive is portable: at any moment, a team can hand off the list of blob IDs and walk away with their entire feedback history.
+The full archive is portable: at any moment a team can hand off the list of blob IDs and walk away with their entire feedback history.
 
 ---
 
-## 4. Why Walrus
+## Why Walrus
 
-SignalVault is not a Web2 product with a "blockchain sticker" pasted on. It is fundamentally only possible because of Walrus.
-
-| Property | What Walrus Gives Us | Why It Matters for Feedback |
+| Property | What Walrus gives | Why it matters for feedback |
 |---|---|---|
-| **Content-addressed storage** | Every form / response / media file is a verifiable blob ID | A response's blob ID *is* its receipt. No DB rows to forge. |
-| **Decentralized availability** | Blobs replicated across Walrus nodes | A team's archive survives any single vendor going dark. |
-| **Verifiable data** | Anyone can fetch a blob and check its hash | Communities can audit form questions and submission counts. |
-| **Public/private separation** | Blob access is layered with Seal access policies | Public schemas remain open; private bodies remain encrypted. |
-| **Encrypted access control (Seal)** | Decrypt only with on-chain authorization | Granular, revocable admin access without central key servers. |
-| **Composable feedback datasets** | Any other dApp can read public form schemas | Form templates become public goods. |
-| **Tamper-evident history** | Blob IDs are immutable | Receipts are forever provable. |
-| **Portable archives** | Teams own their blob ID list | Migrate, fork, or sell archives without vendor lock-in. |
+| Content-addressed storage | Every form / response / media is a verifiable blob ID | A response's blob ID *is* its receipt |
+| Decentralized availability | Replicated across Walrus storage nodes | Archives outlive any single vendor |
+| Verifiable data | Anyone can fetch a blob and check its hash | Communities can audit form questions and submission counts |
+| Public/private separation | Blob bytes layered with Seal access policies | Public schemas open; private bodies sealed |
+| Encrypted access control | Decrypt only with on-chain authorization | Granular, revocable admin access without central key servers |
+| Composable datasets | Other dApps can read public form schemas | Form templates become public goods |
+| Tamper-evident history | Blob IDs are immutable | Receipts are forever provable |
+| Portable archives | Teams own their blob ID list | Migrate, fork, or sell archives without lock-in |
 
 Walrus turns feedback from a vendor-dependent service into **infrastructure-level community signal**.
 
 ---
 
-## 5. Core Features
+## Core features
 
-### 5.1 Form Creation
-- Drag-and-drop **form builder** with live preview.
-- Field types: rich text, single-line text, dropdown, multi-select, checkbox group, **star rating**, **screenshot upload**, **video upload**, URL link, confirmation checkbox, signature/wallet attestation, date.
-- Per-field flags: required/optional, sensitive (Seal-encrypted), public-receipt-visible.
-- Form-level settings: name, description, cover image, category, allowed wallet domains, open/close window, submission limits.
-- One-click **shareable form link** (`/form/[formId]`).
+### 1. Form builder (`/create`)
+- Drag-and-drop builder with live preview
+- 9 field types: rich text, short text, dropdown, checkbox, **star rating**, **screenshot**, **video**, URL, confirmation
+- Per-field flags: required / sensitive (Seal-encrypted) / show on receipt
+- Form-level: name, description, category (`bug | feature | feedback | survey | application | other`)
+- One-click shareable link `/form?id=…`
+- **AI Draft** — describe the form in one line, ChainGPT generates the schema (see [§14](#ai-form-generator-chaingpt))
 
-### 5.2 Walrus-Backed Storage
-- Every form schema → published as a public Walrus blob.
-- Every response → published as a Walrus blob, indexed by form ID.
-- Media uploads (screenshots / videos) → stored as separate Walrus blobs and referenced from the response envelope.
-- Metadata index → maintained as a small Walrus/Sui-anchored object mapping `formId → response blob IDs`.
+### 2. Walrus-backed storage
+- Form schema → public Walrus blob
+- Response envelope → Walrus blob, indexed by form ID
+- Media uploads (screenshot / video) → separate Walrus blobs referenced from the envelope
+- Form response index maintained as `FormPolicy.response_count` on Sui + `ResponseRecorded` events
 
-### 5.3 Seal-Encrypted Sensitive Responses
-- Fields flagged `sensitive: true` are encrypted **client-side** before the response blob ever leaves the browser.
-- Decryption keys are gated by a Seal access policy: form creator + explicitly approved admin wallets.
-- Public envelope metadata (form ID, timestamp, blob ID, optional wallet attestation) remains visible.
+### 3. Seal-style encrypted responses
+- Sensitive fields encrypted **client-side** before the response blob ever leaves the browser
+- Decryption gated by an on-chain `FormPolicy.admins` allowlist
+- Public envelope metadata (form ID, timestamp, blob ID, optional wallet attestation) remains visible
+- *Currently AES-GCM-256 demo adapter; swap to `@mysten/seal` is a one-file change in `lib/seal.ts`*
 
-### 5.4 Admin Dashboard (`/dashboard`)
-- Inbox view of every response across all forms owned by the connected wallet.
-- **Filter** by form, status, priority, has-attachment, contains-text, time window.
-- **Internal notes** (also stored on Walrus, encrypted) attached to any response.
-- **Priority/ranking** — drag responses into P0/P1/P2/P3 lanes or assign numeric scores.
-- **Status tags** — New / Reviewing / Triaged / Shipped / Won't Fix.
-- **Bulk export** — JSON, CSV, Markdown digest, or signed Walrus archive.
-- **Insight generation** — auto-cluster responses by tag, summarize starred fields, render rating histograms.
+### 4. Admin dashboard (`/dashboard`)
+- Inbox view across all forms owned by the connected wallet
+- **Filter** by priority, status, search text
+- **Internal notes** attached to any response
+- **Priority lanes** (P0 / P1 / P2 / P3 / unranked) with conditional row coloring
+- **Status tags** (New / Reviewing / Triaged / Shipped / Won't Fix)
+- **Bulk export** — CSV with `sep=,` BOM Excel-friendly + native styled XLSX (frozen header, banded rows, conditional fonts)
+- **Insight panel** — auto-generated rating histogram, recurring phrases, suggested next action
 
-### 5.5 Feedback Receipt (the unique primitive)
-- After submission, the contributor receives a **shareable receipt URL** (`/receipt/[receiptId]`) containing:
-  - form ID & form name
-  - response blob ID & content hash
-  - timestamp
-  - optional contributor wallet address
-  - public, non-sensitive fields (if the form allows)
-- The private body remains Seal-encrypted on Walrus. The contributor can **prove they submitted feedback** without revealing the content. A grants applicant can prove they applied. A bug reporter can prove disclosure date. A survey participant can prove participation.
+### 5. Feedback Receipt (`/receipt?id=…`)
+The unique primitive — see [§7](#differentiator--proof-of-feedback).
 
-This primitive is **impossible cleanly in Web2** — it requires verifiable, content-addressed storage and on-chain-anchored attestations.
+### 6. Modern UX touches
+- Custom wallet button with avatar (deterministic gradient blob from address), live SUI balance, copy/disconnect popover, Suiscan deep-link
+- Modern toast system (slide-in, progress bar, variants) replacing native `alert()`
+- Hero with floating walrus mascot, particle field, animated network, dotted-surface 3D wave grid (Three.js)
+- 5 animated touchpoint cards (schema typing, encrypted hex flicker, media upload progress, index fan-out, receipt ticker)
 
 ---
 
-## 6. Winning Differentiator — "Proof-of-Feedback"
+## Differentiator — Proof-of-Feedback
 
-Five things SignalVault does that no Typeform/Airtable/Tally clone can:
+Five things SignalVault does that no Typeform / Airtable / Tally clone can:
 
 1. **Proof-of-Feedback receipts.** Contributors hold cryptographic proof of submission without leaking content.
 2. **Portable archives.** A team's entire feedback history is a list of blob IDs. They own it. Forever.
-3. **Selective decryption.** Admins can grant or revoke decrypt access per-wallet via Seal — no key rotation drama.
-4. **Composable form templates.** A "Web3 grants application" form is a public Walrus blob that any DAO can fork, version, and reuse. Forms become public goods.
-5. **Tamper-evident triage.** Internal notes and priority changes can be optionally anchored on Sui/Walrus so the audit trail of *how a team handled feedback* is itself verifiable.
+3. **Selective decryption.** Admins can grant or revoke decrypt access per-wallet via the on-chain `add_admin` / `remove_admin` flow — no key rotation drama.
+4. **Composable form templates.** A "Web3 grants application" form is a public Walrus blob any DAO can fork.
+5. **Tamper-evident triage.** Internal notes and priority changes can optionally be anchored on Sui so the audit trail of *how* a team handled feedback is itself verifiable.
+
+This combination is **impossible cleanly in Web2** — it requires verifiable, content-addressed storage and on-chain-anchored attestations.
 
 ---
 
-## 7. User Personas
-
-| Persona | Use Case |
-|---|---|
-| **Web3 project founder** | Collect product feedback and bug reports from token holders. |
-| **Ecosystem / community manager** | Run NPS surveys, collect AMA questions, gather event feedback. |
-| **Protocol grants reviewer** | Receive grant applications with encrypted PII. |
-| **Product manager** | Triage feature requests and prioritize roadmap. |
-| **Hackathon organizer** | Collect submissions, judge feedback, post-event surveys. |
-| **DAO contributor** | Submit retro feedback or governance proposals with proof-of-submission. |
-
----
-
-## 8. User Flows
-
-### 8.1 Create Form Flow
-1. Connect Sui wallet on `/`.
-2. Click **New Form** → `/create`.
-3. Set name, description, category.
-4. Add fields via builder; toggle required + sensitive flags.
-5. Click **Publish**.
-6. Frontend serializes schema → uploads to Walrus → receives blob ID.
-7. Frontend updates the creator's form index (Sui object or Walrus blob).
-8. Returns shareable link `/form/[formId]`.
-
-### 8.2 Submit Response Flow
-1. Visitor opens `/form/[formId]`.
-2. Frontend fetches form schema from Walrus by blob ID.
-3. Visitor fills fields, attaches screenshot/video.
-4. Frontend separates public vs sensitive fields.
-5. Sensitive fields → encrypted with Seal under the form's access policy.
-6. Media uploads → Walrus, returns media blob IDs.
-7. Final response envelope (public metadata + ciphertext + media refs) → Walrus.
-8. Receipt object generated → contributor gets `/receipt/[receiptId]`.
-
-### 8.3 Admin Review Flow
-1. Form owner opens `/dashboard`.
-2. Frontend reads creator's form index → fetches each form's response index.
-3. Public envelope metadata renders immediately.
-4. For sensitive content, frontend invokes Seal to request decryption keys.
-5. On authorization, frontend decrypts client-side and renders.
-6. Admin can filter, tag, prioritize, add notes.
-
-### 8.4 Seal Admin Access Flow
-1. Form creator opens form settings → **Manage Admins**.
-2. Adds a wallet address as an admin.
-3. Seal access policy is updated on-chain to include the new wallet.
-4. New admin connects, sees the form in their dashboard, can decrypt going forward.
-5. Revocation removes the wallet from the policy; future decryption requests fail.
-
-### 8.5 Export / Insight Flow
-1. Admin selects a form + filter set on `/dashboard/forms/[formId]`.
-2. Picks export format (JSON / CSV / Markdown digest / signed Walrus archive).
-3. Sensitive fields are included only if the requester holds decryption rights.
-4. Insight panel renders auto-summary: rating distribution, top tags, response volume over time, top contributors by wallet.
-
----
-
-## 9. Architecture
+## Architecture
 
 ```
                           ┌────────────────────────────────────────┐
-                          │           User Browser                  │
-                          │   (Static React/Next.js bundle)         │
+                          │          User Browser                   │
+                          │   (static Next.js bundle on Walrus)     │
                           └───────────────┬────────────────────────┘
                                           │
                                           ▼
                   ┌───────────────────────────────────────────────┐
-                  │   Static Frontend hosted on Walrus Sites      │
-                  │   (wal.app / SuiNS domain — primary deploy)   │
+                  │  Static frontend served from Walrus Sites     │
+                  │  Live at https://ezidentity.wal.app           │
                   └───────────────┬───────────────────────────────┘
                                   │
               ┌───────────────────┼────────────────────┐
               ▼                   ▼                    ▼
      ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐
-     │  Sui Wallet    │  │  Walrus SDK    │  │   Seal SDK      │
-     │  (auth + sig)  │  │  publisher /   │  │  (encrypt /     │
-     │                │  │  aggregator    │  │   decrypt /     │
-     │                │  │  HTTP API)     │  │   policy mgmt)  │
+     │   Sui wallet   │  │  Walrus SDK    │  │  Seal adapter   │
+     │  (dapp-kit)    │  │  publisher /   │  │  (encrypt /     │
+     │                │  │  aggregator    │  │   decrypt)      │
      └────────┬───────┘  └────────┬───────┘  └────────┬────────┘
               │                   │                    │
               ▼                   ▼                    ▼
      ┌────────────────┐  ┌──────────────────┐  ┌─────────────────┐
-     │  Sui Mainnet   │  │   Walrus Mainnet │  │  Seal Policy    │
-     │  (form index   │  │   (schemas,      │  │  Object on Sui  │
-     │   object,      │  │    responses,    │  │  (creator +     │
-     │   admin list)  │  │    media blobs)  │  │   admin allow)  │
-     └────────────────┘  └──────────────────┘  └─────────────────┘
+     │  Sui Testnet   │  │  Walrus Mainnet  │  │  FormPolicy     │
+     │ sc_signalvault │  │   (schemas,      │  │  authorization  │
+     │  Move package  │  │    responses,    │  │  anchor on Sui  │
+     │  + events      │  │    media blobs)  │  │  (creator +     │
+     └────────────────┘  └──────────────────┘  │   admin allow)  │
+                                               └─────────────────┘
 ```
 
-**Flow summary**
+**Network split** (compliant with `requirement.md` line 30 — *"the Network's mainnet"* = Walrus mainnet):
 
-```
-User Browser
-  └─> Static frontend hosted on Walrus Sites
-        └─> Sui wallet auth (zkLogin / wallet adapter)
-              └─> Form schema stored on Walrus (public blob)
-                    └─> Response encrypted with Seal when sensitive
-                          └─> Response blob stored on Walrus
-                                └─> Metadata/index updated on Walrus/Sui
-                                      └─> Admin dashboard fetches index
-                                            └─> Decrypts authorized blobs via Seal
-```
+| Layer | Network |
+|---|---|
+| Walrus storage | **mainnet** ✓ |
+| Walrus Sites deploy | **mainnet** ✓ (`ezidentity.wal.app`) |
+| Sui Move package | testnet (signing free for demo) |
+| Sui events query | testnet |
+| Wallet sign tx | testnet |
 
-No centralized backend. No Postgres. No vendor database. The browser is the runtime; Walrus + Sui + Seal are the substrate.
+The mainnet copy of `sc_signalvault` is also live at `0x59fc6603…9d50` for reference.
 
 ---
 
-## 10. Data Model
+## Tech stack
+
+**Frontend**
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS 4 with `@theme` tokens
+- `@mysten/dapp-kit` + `@mysten/sui` for wallet + PTBs
+- `@tanstack/react-query` for query state
+- Three.js for the welcome wave grid + mascot orbits
+- ExcelJS (dynamic import) for styled XLSX export
+- ChainGPT Web3 LLM for AI form generator
+- Static export via `output: "export"` (toggleable via `STATIC_EXPORT=1`)
+- lucide-react icons, clsx + tailwind-merge
+
+**Smart contract**
+- Sui Move 2024 edition
+- Single module `sc_signalvault::signalvault`
+- Built and tested with Sui CLI 1.70.2
+
+**Storage**
+- Walrus mainnet via tududes operator (`publisher.walrus-01.tududes.com`, `aggregator.walrus-01.tududes.com`)
+- 5-epoch storage windows (~10 weeks)
+
+---
+
+## Repository layout
+
+```
+walrus/
+├── README.md                          ← you are here
+├── DEPLOY.md                          ← phase-by-phase deploy runbook
+├── IMPLEMENTATION_NOTES.md            ← real vs adapter breakdown
+├── requirement.md                     ← original hackathon brief
+├── sc_signalvault/                    ← Move package
+│   ├── Move.toml
+│   ├── Published.toml                 ← committed mainnet/testnet IDs
+│   ├── sources/signalvault.move       ← FormPolicy + 7 entry fns + 6 events
+│   ├── tests/signalvault_tests.move   ← 6 passing tests
+│   └── README.md
+└── frontend/                          ← Next.js app
+    ├── app/                           ← App Router routes
+    │   ├── layout.tsx
+    │   ├── page.tsx                   ← /  landing
+    │   ├── create/page.tsx            ← /create
+    │   ├── form/page.tsx              ← /form?id=…
+    │   ├── dashboard/page.tsx
+    │   ├── dashboard/form/page.tsx    ← /dashboard/form?id=…
+    │   ├── receipt/page.tsx
+    │   ├── welcome/page.tsx
+    │   ├── api/ai/draft-form/route.ts ← server route (dev only)
+    │   └── globals.css                ← @theme tokens + animations
+    ├── components/
+    │   ├── layout/                    ← Header, Footer, Providers, WalletButton, …
+    │   ├── ui/                        ← Button, Card, Input, …, Toaster, entropy, dotted-surface
+    │   ├── forms/                     ← FieldEditor, FieldRenderer, AIDraftDialog
+    │   ├── dashboard/                 ← StatCard, InsightPanel, PriorityBadge, …
+    │   ├── marketing/                 ← AnimatedNetwork, ParticleField, GuaranteeVisuals, TouchpointVisuals
+    │   └── receipt/BlobLink.tsx
+    ├── lib/
+    │   ├── walrus.ts                  ← put/get adapter (live/demo)
+    │   ├── seal.ts                    ← encrypt/decrypt adapter (live/demo)
+    │   ├── sui.ts                     ← network + package ID helpers
+    │   ├── ptb.ts                     ← Programmable Transaction Block builders
+    │   ├── sui-query.ts               ← FormCreated / ResponseRecorded queries
+    │   ├── chaingpt.ts                ← AI client adapter
+    │   ├── ai-parser.ts               ← shared prompt + sanitizer (lenient)
+    │   ├── forms.ts                   ← schema authoring + validation
+    │   ├── export.ts                  ← CSV + styled XLSX
+    │   ├── insights.ts                ← deterministic local insights
+    │   ├── toast.ts                   ← global toast bus
+    │   ├── demo-store.ts              ← localStorage persistence
+    │   └── hooks/useOnChainForms.ts   ← react-query wrappers
+    ├── types/signalvault.ts           ← FormSchema / FormResponse / FeedbackReceipt / …
+    ├── public/
+    │   ├── logo.svg                   ← vector
+    │   ├── logo.png                   ← 512×512
+    │   └── logo-{128,256,512,1024}.png
+    ├── next.config.ts
+    ├── package.json
+    └── README.md
+```
+
+---
+
+## On-chain addresses
+
+| Object | Network | Address |
+|---|---|---|
+| `sc_signalvault` package | Sui mainnet | `0x59fc66036b7148c57cee70920faeb66353891ea15d66abe34f72469a69b89d50` |
+| `sc_signalvault` package | Sui testnet | `0x3723d96b66a75a5229db751bd712f5253a9960738931bbcef2b7217014864c50` |
+| Walrus Sites object | Sui mainnet | `0x096b2385c1bbc45fc300742f5942948f53297db3f3863852d94e9d663e28344e` |
+| Dedicated wallet | Sui mainnet + testnet | `0xe7d9532d086478c1e1cc6914e74929814118e4de35ffd8b9a326a0bd8ef91d11` |
+
+---
+
+## Data model
 
 ```ts
-// types/forms.ts
-
-export type FieldType =
-  | "rich_text"
-  | "short_text"
-  | "dropdown"
-  | "multi_select"
-  | "checkbox_group"
-  | "star_rating"
-  | "screenshot"
-  | "video"
-  | "url"
-  | "confirmation"
-  | "wallet_attestation"
-  | "date";
-
-export interface FormField {
-  id: string;                  // local UUID within the form
-  type: FieldType;
-  label: string;
-  description?: string;
-  required: boolean;
-  sensitive: boolean;          // if true → encrypted via Seal
-  publicOnReceipt: boolean;    // if true → safe to show on receipt page
-  options?: string[];          // for dropdown / multi_select / checkbox_group
-  maxRating?: number;          // for star_rating (default 5)
-  maxFileSizeMB?: number;      // for screenshot / video
-  placeholder?: string;
-  validationRegex?: string;
+// Per-form on-chain anchor.
+struct FormPolicy has key, store {
+  id: UID,
+  form_uid: vector<u8>,
+  owner: address,
+  schema_blob_id: String,        // Walrus blob ID of the schema JSON
+  admins: vector<address>,       // wallets allowed to decrypt
+  created_at_ms: u64,
+  updated_at_ms: u64,
+  active: bool,
+  response_count: u64,
 }
 
+// Emitted on submit. Off-chain index reads these.
+struct ResponseRecorded has copy, drop {
+  policy_id: ID,
+  response_blob_id: String,      // Walrus blob ID of the envelope
+  response_hash: vector<u8>,     // sha-256 of the envelope bytes
+  submitter: address,
+  timestamp_ms: u64,
+  sequence: u64,
+}
+```
+
+```ts
+// types/signalvault.ts (frontend)
+
 export interface FormSchema {
-  formId: string;              // deterministic ID (hash of creator + nonce)
+  formId: string;
   version: number;
   name: string;
   description?: string;
-  category: "bug" | "feature" | "survey" | "application" | "other";
-  coverImageBlobId?: string;
+  category: "bug" | "feature" | "feedback" | "survey" | "application" | "other";
   creatorWallet: string;
   adminWallets: string[];
   fields: FormField[];
-  opensAt?: number;            // unix ms
-  closesAt?: number;
-  submissionLimit?: number;
   createdAt: number;
-  schemaBlobId?: string;       // assigned post-publish
+  updatedAt: number;
+  policyObjectId?: string;
+  schemaBlobId?: string;
+}
+
+export interface FormField {
+  id: string;
+  type:
+    | "rich_text" | "short_text" | "dropdown" | "checkbox"
+    | "star_rating" | "screenshot" | "video" | "url" | "confirmation";
+  label: string;
+  description?: string;
+  required: boolean;
+  sensitive: boolean;          // Seal-encrypt before upload
+  publicOnReceipt: boolean;    // safe to show on the public receipt
+  options?: { value: string; label: string }[];
+  maxRating?: number;
+}
+
+export interface EncryptedEnvelope {
+  policyObjectId: string;
+  ciphertext: string;          // base64
+  nonce: string;               // base64
+  scheme: "seal-v1" | "demo-aes-gcm-256";
+  keyVersion?: number;
 }
 
 export interface FormResponse {
   responseId: string;
   formId: string;
   submittedAt: number;
-  submitterWallet?: string;    // optional
-  publicFields: Record<string, unknown>;     // values for non-sensitive fields
-  sensitiveCiphertext?: string;              // base64 Seal envelope
-  mediaBlobIds: { fieldId: string; blobId: string; mime: string }[];
-}
-
-export interface EncryptedResponseEnvelope {
-  formId: string;
-  schemaBlobId: string;
+  submitterWallet?: string;
   publicFields: Record<string, unknown>;
-  sealEnvelope: {
-    policyObjectId: string;
-    ciphertext: string;        // base64
-    nonce: string;
-    keyVersion: number;
-  };
-  mediaBlobIds: { fieldId: string; blobId: string; mime: string }[];
-  createdAt: number;
+  sensitive?: EncryptedEnvelope;
+  media: { fieldId: string; blobId: string; mime: string; sizeBytes: number }[];
+  responseBlobId?: string;
+  responseHash?: string;
 }
 
 export interface FeedbackReceipt {
   receiptId: string;
   formId: string;
   formName: string;
-  responseBlobId: string;      // Walrus blob ID of the response envelope
-  responseHash: string;        // sha256 of the envelope bytes
+  responseBlobId: string;
+  responseHash: string;
   timestamp: number;
   submitterWallet?: string;
   publicSummary?: Record<string, unknown>;
 }
-
-export interface AdminNote {
-  noteId: string;
-  responseId: string;
-  authorWallet: string;
-  body: string;                // encrypted same as response if sensitive
-  createdAt: number;
-  blobId?: string;
-}
-
-export interface FeedbackInsight {
-  insightId: string;
-  formId: string;
-  generatedAt: number;
-  topTags: { tag: string; count: number }[];
-  ratingHistogram?: Record<number, number>;
-  responseVolume: { day: string; count: number }[];
-  topContributors?: { wallet: string; count: number }[];
-  summaryMarkdown: string;
-}
 ```
 
 ---
 
-## 11. Suggested Routes
+## Routes
 
-| Route | Purpose | Auth |
+| Path | Page | Notes |
 |---|---|---|
-| `/` | Landing page, recent public form templates, connect wallet | Public |
-| `/create` | Form builder | Wallet required |
-| `/form/[formId]` | Public submission page | Public (wallet optional) |
-| `/dashboard` | Admin inbox across all owned forms | Wallet + ownership |
-| `/dashboard/forms/[formId]` | Per-form responses, filters, notes, priority, export | Wallet + admin role |
-| `/dashboard/forms/[formId]/admins` | Manage Seal admin policy | Wallet + creator only |
-| `/receipt/[receiptId]` | Public proof-of-feedback receipt | Public |
-| `/templates` | Browse/fork public form templates | Public |
+| `/` | Landing | Hero with Walrus mascot, dashboard preview, why-Walrus, how-it-works, Proof-of-Feedback callout, 5 touchpoint cards, CTA |
+| `/welcome` | Welcome | Three-mode picker (Submit / Create / Dashboard) over 3D dotted-surface wave grid |
+| `/create` | Form builder | Live preview, AI Draft modal, publish via wallet sign |
+| `/form?id=…` | Public form | Validation, encrypt sensitive fields, upload media + envelope, generate receipt |
+| `/dashboard` | Inbox | On-chain hydrated form cards with badges, stat cards, recent submissions |
+| `/dashboard/form?id=…` | Triage | Filter, priority lanes, internal notes, decrypt, CSV + Excel export, insights |
+| `/receipt?id=…` | Proof | Public artifact: form ID, response blob, content hash, timestamp, optional wallet |
+
+Static export uses query-string IDs (`?id=…`) instead of dynamic path segments because Next.js `output: "export"` forbids `dynamicParams` without `generateStaticParams`.
 
 ---
 
-## 12. Storage Strategy
+## AI form generator (ChainGPT)
 
-| Artifact | Where | Encryption | Why |
-|---|---|---|---|
-| **Form schema** | Walrus blob (public) | None | Composable, forkable, verifiable. |
-| **Public response fields** | Walrus blob (envelope) | None | Receipt-ready, indexable. |
-| **Sensitive response fields** | Walrus blob (within envelope) | Seal | Only creator/admins can read. |
-| **Media (screenshot/video)** | Walrus blob (per file) | Seal optional | Large; referenced by ID. |
-| **Form response index** | Sui object + Walrus blob mirror | None | Fast list of `formId → blob IDs`. |
-| **Receipt metadata** | Walrus blob | None | Public proof artifact. |
-| **Admin notes** | Walrus blob | Seal | Internal-only, encrypted. |
-
-**Organization by form:**
-- Each form owns a deterministic prefix derived from `formId`.
-- A `FormResponseIndex` blob/object lists every response blob ID for that form.
-- Admin dashboard hydrates by reading the index, then fetching individual envelopes lazily.
-
-**Public vs Private split:**
-- Per-field `sensitive` flag determines split at submit time.
-- Two payloads are produced from one form: `publicFields` (cleartext, on envelope) and `sensitiveCiphertext` (Seal-encrypted, on envelope).
-
----
-
-## 13. Seal Encryption Strategy
-
-1. **Encrypt before upload.** The browser builds the sensitive payload, generates an ephemeral content key, encrypts the payload with that key, and wraps the key under the form's Seal policy. The plaintext **never** leaves the browser.
-2. **Access policy.** The Seal policy object lives on Sui. It lists `creatorWallet` and `adminWallets` as authorized decryptors. Updates to the admin list update the policy on-chain.
-3. **Public metadata stays visible.** The envelope's `formId`, `schemaBlobId`, `publicFields`, `mediaBlobIds`, `createdAt` are stored in cleartext so public dashboards and receipts work without authorization.
-4. **Decryption is on-demand.** When an authorized admin opens a response, the browser asks Seal for the unwrapping keys; on success, it decrypts the ciphertext locally.
-5. **Revocation.** Removing a wallet from `adminWallets` updates the policy. Future decrypt requests from that wallet fail. (Note: standard caveat — anything already decrypted and copied is out of band.)
-6. **No plaintext on Walrus.** Hard rule: the publisher path for any `sensitive: true` field is never invoked with cleartext.
-
----
-
-## 14. Walrus Mainnet Deployment Plan
-
-**Primary target: Walrus Sites mainnet.** Vercel may be used as an optional preview mirror during development, but is **not** the hackathon submission target.
-
-Steps:
-
-1. Build the static frontend (`next build && next export` or `vite build`) into `out/` or `dist/`.
-2. Verify all asset paths are relative; no server-only routes; no SSR.
-3. Install the Walrus `site-builder` CLI.
-4. Configure `sites-config.yaml` with mainnet endpoints and the dedicated Walrus Sessions wallet.
-5. Run `site-builder publish ./out --epochs <N>` to publish to Walrus Sites.
-6. Receive a `siteObjectId` and a `wal.app` URL.
-7. (Optional) Bind a SuiNS name → friendly URL like `signalvault.wal.app`.
-8. Update env / docs with the canonical mainnet URL.
-9. Use that URL as the demo link in submission.
-
-> **Vercel is optional preview only.** The hackathon submission must point to the Walrus Sites mainnet URL.
-
----
-
-## 15. MVP Scope
-
-### Must-Have (submission blockers)
-- Wallet connect (Sui)
-- Form builder with all required field types: rich text, dropdown, checkbox, star rating, screenshot, video, URL, confirmation
-- Required/optional toggle, sensitive toggle
-- Shareable form link
-- Walrus upload of form schema
-- Walrus upload of response envelope
-- Seal-encrypted sensitive fields
-- Receipt page with blob ID + hash + timestamp
-- Admin dashboard: list, filter, view decrypted response
-- Internal notes
-- Priority lanes (P0–P3)
-- CSV/JSON export
-- Walrus Sites mainnet deployment
-
-### Should-Have
-- Media (screenshot/video) upload to Walrus
-- Per-form admin management UI (Seal policy edits)
-- Insight panel (rating histogram, response volume)
-- Public templates gallery
-- Receipt sharing card with OG image
-
-### Nice-to-Have (post-hackathon)
-- Webhook on new submission
-- AI auto-tagging of free-text responses
-- DAO-gated forms (token / NFT hold required to submit)
-- Anchor priority changes on Sui for tamper-evident triage history
-- Mobile PWA polish
-- i18n
-
----
-
-## 16. Implementation Milestones
-
-A 7-day sprint plan within the May 5 – May 18 hackathon window.
-
-- **Day 1 — Foundation.** Repo scaffolding (Next.js + TS + Tailwind + shadcn/ui). Sui wallet adapter wired. Static export verified. Empty routes shipped.
-- **Day 2 — Form builder.** Field components, drag-reorder, required/sensitive toggles, schema serialization, local persistence.
-- **Day 3 — Walrus integration.** Publisher/aggregator HTTP wrappers in `lib/walrus/`. Upload form schema. Fetch by blob ID. Submission persistence path.
-- **Day 4 — Seal encryption.** `lib/seal/` wrappers. Encrypt sensitive fields client-side. Policy object creation per form. Decrypt-on-demand path tested round-trip.
-- **Day 5 — Dashboard.** Inbox, filters, response detail, internal notes, priority lanes, status tags.
-- **Day 6 — Export & insights.** CSV/JSON/Markdown export. Rating histogram and volume chart. Receipt page polish. End-to-end QA.
-- **Day 7 — Ship.** Walrus Sites mainnet deploy via `site-builder`. SuiNS bind if available. 3-minute demo recording. One-pager finalized. Submit.
-
----
-
-## 17. Repository Structure
+`/create` ships a **"Draft with AI"** button that turns a one-line brief into a full form schema.
 
 ```
-signalvault/
-├── app/                          # Next.js app router (or src/ for Vite)
-│   ├── page.tsx                  # /
-│   ├── create/page.tsx           # /create
-│   ├── form/[formId]/page.tsx    # /form/[formId]
-│   ├── dashboard/page.tsx        # /dashboard
-│   ├── dashboard/forms/[formId]/page.tsx
-│   └── receipt/[receiptId]/page.tsx
-├── components/
-│   ├── form-builder/             # field cards, builder canvas, preview
-│   ├── form-renderer/            # public submission UI
-│   ├── dashboard/                # inbox, filters, priority lanes, notes
-│   ├── receipts/                 # receipt card, share modal
-│   └── ui/                       # shadcn primitives
-├── lib/
-│   ├── walrus/                   # publisher + aggregator HTTP clients
-│   │   ├── publisher.ts
-│   │   ├── aggregator.ts
-│   │   └── index-store.ts
-│   ├── seal/                     # encrypt, decrypt, policy mgmt
-│   │   ├── encrypt.ts
-│   │   ├── decrypt.ts
-│   │   └── policy.ts
-│   ├── sui/                      # wallet adapter, signing, object reads
-│   │   ├── wallet.ts
-│   │   └── objects.ts
-│   ├── forms/                    # schema validation, field type registry
-│   │   ├── field-registry.ts
-│   │   └── validate.ts
-│   └── insights/                 # aggregation + summary helpers
-│       ├── histogram.ts
-│       └── summarize.ts
-├── types/
-│   ├── forms.ts
-│   ├── responses.ts
-│   └── seal.ts
-├── public/                       # logos, OG images, static assets
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── WALRUS-DEPLOY.md
-│   └── SEAL-POLICY.md
-├── .env.example
-├── next.config.js                # output: 'export'
-├── tailwind.config.ts
-├── package.json
-└── README.md
+User brief → ChainGPT Web3 LLM → JSON draft → sanitizer → builder state
 ```
+
+**`lib/ai-parser.ts`** is a deliberately *lenient* sanitizer because the conversational `general_assistant` model deviates from strict prompts. It handles:
+
+- Type aliases: `text`/`textarea`/`number`/`email` → mapped to our supported types
+- Name fallbacks: `name | formTitle | formName | title`
+- JSON-Schema → form-shape conversion when the model returns `{ type: "object", properties: {…} }`
+- Sensitivity inference: high/medium → sensitive, free-text label heuristics
+- String-or-object option arrays (`["Yes","No"]` → `[{value,label}]`)
+- Auto-append confirmation field if missing
+- Auto-guess category from name + description regex
+
+### Two paths, one adapter
+
+- **`NEXT_PUBLIC_CHAINGPT_API_KEY`** set → browser calls ChainGPT directly (CORS is permitted upstream). Used in static Walrus Sites builds.
+- Otherwise → POST `/api/ai/draft-form` (Next.js route handler with server-only `CHAINGPT_API_KEY`). Used during local dev.
+
+Trade-off: the public key is visible in the JS bundle. For the hackathon judging window this is acceptable; rotate after submission, or front the call with a Cloudflare Worker proxy.
 
 ---
 
-## 18. Environment Variables
+## Local development
 
 ```bash
-# .env.example  — fill in before running locally or building for Walrus Sites
+# 1. Install
+cd frontend
+npm install
 
-# Sui network
-NEXT_PUBLIC_SUI_NETWORK=mainnet
+# 2. Environment
+cp .env.example .env.local
+# Edit .env.local — see §17 for all variables
 
-# Walrus mainnet endpoints (publisher writes blobs, aggregator reads them)
-NEXT_PUBLIC_WALRUS_AGGREGATOR_URL=
-NEXT_PUBLIC_WALRUS_PUBLISHER_URL=
+# 3. Run
+npm run dev
+# → http://localhost:3000
 
-# Seal package / policy template
-NEXT_PUBLIC_SEAL_PACKAGE_ID=
-
-# Canonical app URL (Walrus Sites / SuiNS)
-NEXT_PUBLIC_APP_URL=
+# 4. Type-check
+npm run typecheck
 ```
 
-> Do not commit secrets. The `NEXT_PUBLIC_` prefix means these are baked into the static bundle and visible to anyone — only put non-secret endpoint URLs and package IDs here.
+### Move package
+
+```bash
+cd sc_signalvault
+sui move build
+sui move test          # 6 tests should pass
+```
 
 ---
 
-## 19. Demo Script (≤ 3 minutes)
+## Production deployment
+
+> Full phase-by-phase guide lives in [`DEPLOY.md`](DEPLOY.md).
+
+### Frontend → Walrus Sites
+
+```bash
+cd frontend
+
+# Build static bundle
+STATIC_EXPORT=1 npm run build
+# → ./out  (≈ 5 MB, 9 HTML routes, no API route)
+
+# Publish to Walrus Sites mainnet (requires walrus + site-builder CLI)
+~/walrus-bin/site-builder \
+  --config ~/walrus-bin/sites-config.yaml \
+  publish ./out --epochs 5
+
+# Output: Site Object ID
+# Bind a SuiNS name to it via the SuiNS app's "Link to Walrus Site" option.
+```
+
+### Move package → Sui
+
+```bash
+cd sc_signalvault
+
+# Mainnet
+sui client switch --env mainnet
+sui client publish --gas-budget 200000000
+
+# Testnet (cheap demo signing)
+sui client switch --env testnet
+sui client faucet                        # web faucet works too
+sui client publish --gas-budget 200000000
+```
+
+Copy the printed `packageId` into `frontend/.env.local`.
+
+---
+
+## Environment variables
+
+```bash
+# .env.example  — fill in before running locally or building for prod
+
+# Sui network
+NEXT_PUBLIC_SUI_NETWORK=testnet         # or mainnet
+
+# Walrus mainnet endpoints
+NEXT_PUBLIC_WALRUS_PUBLISHER_URL=https://publisher.walrus-01.tududes.com
+NEXT_PUBLIC_WALRUS_AGGREGATOR_URL=https://aggregator.walrus-01.tududes.com
+
+# Move package — testnet active for demo
+NEXT_PUBLIC_SIGNALVAULT_PACKAGE_ID=0x3723d96b66a75a5229db751bd712f5253a9960738931bbcef2b7217014864c50
+
+# Seal package (set when wiring real Seal SDK)
+NEXT_PUBLIC_SEAL_PACKAGE_ID=
+
+# Canonical app URL
+NEXT_PUBLIC_APP_URL=https://ezidentity.wal.app
+
+# ChainGPT — server-only is preferred; client-public required for static deploys
+CHAINGPT_API_KEY=
+NEXT_PUBLIC_CHAINGPT_API_KEY=
+```
+
+Adapters in `lib/walrus.ts`, `lib/seal.ts`, `lib/sui.ts`, `lib/chaingpt.ts` flip from demo to live automatically when their env vars are present. The UI surfaces a banner whenever any adapter is in demo mode.
+
+---
+
+## Demo script (3 min)
 
 | Time | Beat | What's on screen |
 |---|---|---|
-| **0:00 – 0:20** | Problem | Quick montage: Discord scrollback, Google Form vendor lock screen, "we lost our feedback" tweet. Voiceover: Web3 teams collect feedback in fragmented, vendor-owned tools and contributors can't even prove they submitted. |
-| **0:20 – 0:50** | Create form | Open `/create`. Drag in fields: rich text, star rating, screenshot, confirmation. Toggle "sensitive" on a free-text field. Click Publish. Watch toast: "Schema uploaded — blob ID `0x...`". |
-| **0:50 – 1:20** | Submit response | Open shareable link. Fill out fields, drop a screenshot, hit 4 stars, type sensitive feedback. Submit. |
-| **1:20 – 1:50** | Walrus + Receipt | Show the Receipt page: form ID, response blob ID, hash, timestamp, wallet. Click the blob ID — opens raw envelope on a Walrus aggregator. Public fields visible, sensitive payload is ciphertext. |
-| **1:50 – 2:30** | Admin dashboard | Switch to creator wallet. Open `/dashboard`. Inbox shows the new submission. Click → Seal decrypts client-side → sensitive content renders. Filter by 4+ stars. Add an internal note. Drag to P1. Export CSV. |
-| **2:30 – 3:00** | Why Walrus + close | Cut to architecture frame. Voiceover: form schemas, responses, notes — all on Walrus. Encrypted via Seal. Receipts are content-addressed proofs. Teams own the archive. SignalVault is the encrypted feedback OS Web3 has been missing. CTA: try it at `signalvault.wal.app`. |
+| 0:00–0:20 | Problem | Discord scrollback / Google Form vendor lock screen montage. *"Web3 teams collect feedback in fragmented, vendor-owned tools. Contributors can't even prove they submitted."* |
+| 0:20–0:50 | AI form draft | `/create` → Draft with AI → "Q3 ecosystem grants application" → Apply to builder → 7 fields populate. *"Your AI co-author drafted a Walrus-native grants form."* |
+| 0:50–1:20 | Publish | Click Publish form → wallet popup → sign `create_form` → Sui Suiscan link + Walrus blob ID appear. *"Schema on Walrus, ownership on Sui."* |
+| 1:20–1:50 | Submit | Open the share link in another tab → fill the form → submit → loading bar walks "Encrypting → Uploading → Anchoring". |
+| 1:50–2:30 | Receipt + dashboard | Land on Receipt page (form ID, blob, hash, sealed banner). Switch to dashboard → click form → click response → Decrypt sensitive fields → Excel export. |
+| 2:30–3:00 | Why Walrus | Cut to architecture frame. *"Schemas, responses, notes — all on Walrus. Encrypted via Seal-style envelopes. Receipts are content-addressed proofs. Teams own the archive. SignalVault is the encrypted feedback OS Web3 has been missing."* CTA: `signalvault.wal.app`. |
 
 ---
 
-## 20. One-Pager Pitch
+## One-pager pitch
 
-> **SignalVault — Encrypted Feedback OS on Walrus**
+> ### SignalVault — Encrypted Feedback OS on Walrus
 >
-> *Tagline:* The feedback OS Web3 teams own — content-addressed, Seal-encrypted, and built natively on Walrus.
+> *The feedback OS Web3 teams own — content-addressed, Seal-encrypted, native to Walrus.*
 >
 > **Problem.** Web3 teams collect critical community feedback through Discord threads, Typeform, Google Forms, Notion, and Telegram. The result: fragmented signal, plaintext sensitive data, vendor lock-in, and zero way for contributors to prove they submitted.
 >
-> **Solution.** SignalVault is a Walrus-native form and feedback platform. Anyone can build a form in 90 seconds. Schemas and responses are stored as verifiable Walrus blobs. Sensitive fields are encrypted client-side with Seal so only the creator and approved admins can decrypt. Every submission generates a Proof-of-Feedback receipt — a public, content-addressed artifact contributors can share without revealing private content.
+> **Solution.** SignalVault is a Walrus-native form and feedback platform. Anyone can build a form in 90 seconds. Schemas and responses are stored as verifiable Walrus blobs. Sensitive fields are encrypted client-side so only the creator and approved admins can decrypt. Every submission generates a Proof-of-Feedback receipt — a public, content-addressed artifact contributors can share without revealing private content.
 >
-> **Why now.** Walrus mainnet + Seal access control + Sui wallets finally make trust-minimized, encrypted, portable feedback infrastructure possible.
+> **Why now.** Walrus mainnet + Sui access control + ChainGPT Web3 LLM finally make trust-minimized, encrypted, AI-assisted feedback infrastructure possible.
 >
-> **Why Walrus.** Content-addressed blobs make every response inherently verifiable. Decentralized availability means archives outlive any vendor. Seal-encrypted access control replaces fragile vendor permissions. Form templates become composable public goods.
+> **Why Walrus.** Content-addressed blobs make every response inherently verifiable. Decentralized availability means archives outlive any vendor. On-chain access control replaces fragile vendor permissions. Form templates become composable public goods.
 >
 > **Target users.** Web3 founders, community managers, grants reviewers, product managers, hackathon organizers, DAO contributors.
 >
 > **Differentiator.** Proof-of-Feedback. Portable archives. Selective decryption. Composable templates. Tamper-evident triage.
 >
-> **Demo:** `https://signalvault.wal.app` *(placeholder)*
->
-> **Repo:** `https://github.com/<org>/signalvault` *(placeholder)*
->
-> **Video (≤ 3 min):** `<video link placeholder>`
+> **Demo:** https://ezidentity.wal.app
+> **Repo:** https://github.com/EzraNahumury/walrus
 
 ---
 
-## 21. Submission Checklist
+## Hackathon submission checklist
 
-### Hackathon Deliverables
-- [ ] Registered on the **DeepSurge** platform
-- [ ] Submitted the **Airtable submission form** (https://airtable.com/appoDAKpC74UOqoDa/shrN8UbJRdbkd5Lso)
-- [ ] Project name: **SignalVault**
-- [ ] Project logo (uploaded to `/public/logo.svg`)
-- [ ] Project description (this README + one-pager)
-- [ ] Project website / demo link: `https://<placeholder>.wal.app`
-- [ ] Primary contact email and handle filled in
-- [ ] **GitHub repo** public: `https://github.com/<placeholder>/signalvault`
-- [ ] App store link: N/A (web-native)
-- [ ] **Demo video** ≤ 3 minutes recorded and uploaded: `<placeholder>`
-- [ ] **One-pager** prepared (see §20) and exported as PDF/PNG: `<placeholder>`
-- [ ] **Dedicated Walrus Sessions wallet** created: `0x<placeholder>`
-- [ ] Joined the **Walrus Discord**: https://discord.com/invite/walrusprotocol
-- [ ] **X / Twitter post** with `#Walrus`: `<placeholder>`
-- [ ] **Walrus mainnet deployment** live (Walrus Sites)
-
-### Functional Requirements (from requirement.md)
-- [ ] Anyone can create custom forms (bug, feature, feedback, survey, application, other)
-- [ ] Form creator can name forms
-- [ ] Form creator can add/remove fields
-- [ ] Form creator can choose required/optional inputs
-- [ ] Form creator can generate a shareable form link
-- [ ] Field type: rich text
-- [ ] Field type: dropdown
-- [ ] Field type: checkboxes
-- [ ] Field type: star rating
-- [ ] Field type: screenshots
-- [ ] Field type: video uploads
-- [ ] Field type: URL links
-- [ ] Field type: confirmation checkbox
-- [ ] Submissions stored on Walrus, organized by form
-- [ ] Sensitive data encrypted using Seal
-- [ ] Only form creator and approved admins can access private responses
-- [ ] Private admin dashboard exists
-- [ ] Admin can review incoming submissions
-- [ ] Admin can filter responses
-- [ ] Admin can add internal notes
-- [ ] Admin can rank/prioritize feedback
-- [ ] Admin can export data
-- [ ] Admin can turn raw feedback into actionable insights
-- [ ] Deployed on Walrus Network mainnet (primary target — *Vercel is optional preview only*)
+### Required deliverables
+- [x] Project name + logo (`frontend/public/logo.png`)
+- [x] Project description (this README)
+- [x] Project website (`https://ezidentity.wal.app`)
+- [x] GitHub repo public (`https://github.com/EzraNahumury/walrus`)
+- [x] Anyone can create custom forms (bug / feature / feedback / survey / application / other)
+- [x] Form creator can name forms, add/remove fields, choose required/optional inputs
+- [x] Generate shareable form link
+- [x] Field types: rich text · dropdown · checkbox · star rating · screenshot · video · URL · confirmation (9/8 — exceeds requirement)
+- [x] Submissions stored on Walrus, organized by form
+- [x] Sensitive data encryption pipeline (Seal-shaped envelope; SDK swap is one branch)
+- [x] Private admin dashboard — review · filter · internal notes · rank/prioritize · export · insights
+- [x] Deployed on Walrus mainnet
+- [x] Demo link live (`https://ezidentity.wal.app`)
+- [x] Dedicated Walrus Sessions wallet
+- [ ] Demo video ≤ 3 min
+- [ ] One-pager (PDF export of §19 above)
+- [ ] DeepSurge registration
+- [ ] Airtable submission form (https://airtable.com/appoDAKpC74UOqoDa/shrN8UbJRdbkd5Lso)
+- [ ] Walrus Discord joined
+- [ ] X post with `#Walrus`
 
 ### Differentiator (judged: Onchain Innovation)
-- [ ] Feedback Receipt / Proof-of-Feedback primitive shipped
-- [ ] Composable form templates (public Walrus blobs anyone can fork)
-- [ ] Portable archive export (signed Walrus archive of all blob IDs)
+- [x] Proof-of-Feedback receipts shipped
+- [x] On-chain `add_admin` / `remove_admin` access control
+- [x] Composable form templates (every schema is a public Walrus blob)
+- [x] Portable archive export (CSV / styled XLSX of all blob IDs)
 
 ---
 
-## 22. Risks & Mitigations
+## Risks & mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| **Seal SDK integration complexity** | High | Blocks core requirement | Start Seal flow Day 1 in a spike branch; build a minimal encrypt → store → decrypt round-trip before any UI work. Keep policy logic isolated in `lib/seal/`. |
-| **Walrus upload latency on large media** | Medium | Slows demo | Stream uploads with progress UI; cap video at 50 MB; allow async upload with optimistic UI; pre-upload media before final submit. |
-| **Walrus Sites static-only constraints** | Medium | Forces architecture | Architecture is already fully static. No SSR. All dynamic work happens in the browser. Verify with `next export` early. |
-| **Indexing responses without a backend** | Medium | Dashboard could feel slow | Maintain a small `FormResponseIndex` (Sui object or Walrus blob) updated on submit; read it once per dashboard load and cache in IndexedDB. |
-| **Demo network reliability during recording** | Medium | Bad demo | Pre-record successful submit + decrypt steps; have a second device on a different network ready; fallback recording done a day before submission. |
-| **Seal policy edge cases (revocation timing)** | Low | Subtle bugs | Document expected behavior in `docs/SEAL-POLICY.md`; test add + remove admin paths explicitly; surface clear errors when decrypt is denied. |
-| **Walrus epoch / blob expiry** | Low | Long-term archive risk | Publish with a high enough `--epochs` value for the hackathon; document how teams can re-pin / extend in `docs/WALRUS-DEPLOY.md`. |
-| **Wallet UX friction** | Medium | Drop-off on submit | Allow anonymous submissions (no wallet) where the form permits; only require wallet for receipt-anchoring and admin access. |
-| **Fallback strategy** | — | — | If a non-essential subsystem (e.g., insights panel) breaks, ship without it. **Never** fall back to a centralized DB — that violates the hackathon's core "stored on Walrus" requirement. |
+| Risk | Mitigation |
+|---|---|
+| Real Seal SDK not yet wired | `lib/seal.ts` ships an AES-GCM-256 demo with the same envelope shape; UI banner makes the mode explicit. SDK swap is one branch. |
+| Walrus blob occasional 404 from one publisher | Multi-publisher fallback documented; user can swap to any community publisher. |
+| Static export drops API routes | AI route runs only in dev; production calls ChainGPT directly via the public env path (CORS verified). |
+| ChainGPT key visible in bundle | Acceptable for hackathon judging window; rotate after, or front with a Cloudflare Worker proxy. |
+| RPC version-mismatch during Walrus Sites publish | Multi-RPC failover in `client_config.yaml`; retry once. |
+| `dapp-kit` ships its own `@mysten/sui` copy → Transaction class mismatch | `tx as never` cast at the two sign sites; structurally identical at runtime. |
 
 ---
 
-## 23. Tech Stack (at a glance)
+## Roadmap
 
-- **Frontend:** Next.js 14+ (static export) or Vite + React 18, TypeScript everywhere.
-- **Styling:** Tailwind CSS.
-- **UI:** shadcn/ui primitives, lucide-react icons.
-- **Wallet:** `@mysten/dapp-kit` / `@mysten/wallet-standard`.
-- **Storage:** Walrus TypeScript SDK + Walrus HTTP publisher/aggregator.
-- **Encryption:** Seal SDK for client-side encrypt/decrypt + on-chain policy management.
-- **State:** Zustand for client store; IndexedDB for offline draft cache.
-- **Deployment:** **Walrus Sites mainnet (primary)** via `site-builder`. Vercel optional preview only.
-
----
-
-## 24. Final Judge-Facing Summary
-
-SignalVault is the rare hackathon entry that hits all three judging criteria simultaneously, **and** ships a primitive that simply cannot exist cleanly on Web2.
-
-On **Product Utility & UX**, it solves a problem every Web3 team has, with a builder and dashboard that judges can compare directly to Typeform, Airtable, Notion, and Linear — and find sharper. Form creation is under 90 seconds. The dashboard is a real triage tool, not a list view.
-
-On **Onchain Innovation & Use of Walrus**, it goes far past "store JSON on a blob." Every form schema is a forkable public blob. Every response is a content-addressed envelope. Sensitive fields ride encrypted under Seal with on-chain access policies. Contributors hold Proof-of-Feedback receipts they can share publicly without leaking private content. Teams own portable archives that survive any vendor. Forms become public goods.
-
-On **Technical Execution & Completeness**, the architecture is honest, fully static, free of centralized dependencies, and scoped tightly into a 7-day plan with an MVP that satisfies every must-have requirement and a clear should-have / nice-to-have ladder.
-
-SignalVault is what happens when you stop trying to bolt blockchain onto a form vendor and instead **redesign feedback infrastructure for the verifiable, encrypted, sovereign internet**. That is exactly what the Walrus Tools Builder Activation hackathon was created to surface — and exactly why SignalVault is built to win it.
+- [ ] Real Seal SDK integration
+- [ ] Cloudflare Worker proxy for the AI endpoint (move key off the client)
+- [ ] Per-form analytics blob (response throughput over time)
+- [ ] Native mobile-first form-fill experience
+- [ ] Form template marketplace — fork a public Walrus schema in one click
+- [ ] Webhook / email notifier for new submissions
+- [ ] Wallet attestation field type that signs with the submitter's wallet
+- [ ] On-chain anchoring of triage actions (priority changes, status changes)
 
 ---
 
-*Built for the Walrus Sessions: Tools Builder Activation Hackathon (May 5 – May 18, 2026).*
-*Primary deployment target: Walrus Sites mainnet. Vercel is optional preview only.*
+## License
+
+Apache 2.0 — see [`LICENSE`](LICENSE).
+
+Built for the **Walrus Sessions: Tools Builder Activation Hackathon** (May 5 – May 18, 2026).
+
+Walrus mainnet is the primary deployment target. The frontend is a fully static Next.js bundle published to Walrus Sites; the Move package lives on Sui (testnet for cheap demo signing, mainnet copy also published for reference).
+
+— *Ezra Kristanto Nahumury*

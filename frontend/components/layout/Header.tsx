@@ -1,9 +1,9 @@
 "use client";
 
-import { ConnectButton } from "@mysten/dapp-kit";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { WalletButton } from "@/components/layout/WalletButton";
 import { Logo } from "@/components/ui/Logo";
 import { PillButton } from "@/components/ui/PillButton";
 import { cn } from "@/lib/cn";
@@ -58,10 +58,7 @@ export function Header() {
         </nav>
         <div className="flex items-center gap-2">
           {isApp ? (
-            <ConnectButton
-              connectText="Connect wallet"
-              className="!h-10 !px-4 !text-[12px] !tracking-[0.18em] !uppercase !font-semibold !rounded-full !bg-[color:var(--color-ink-900)] !text-white !border !border-[color:var(--color-ink-900)] hover:!bg-[color:var(--color-ink-800)] !shadow-none"
-            />
+            <WalletButton />
           ) : (
             <PillButton href="/welcome" size="sm">
               Launch app
